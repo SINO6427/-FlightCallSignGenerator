@@ -3,8 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>模拟飞行呼号（ICAO）生成器</title>
+    <title>模拟飞行呼号生成器BY:ZIYU YANG</title>
     <style>
+      html {
+        color-scheme: dark;
+      }
+
       :root {
         --bg: #0b1220;
         --card: rgba(255, 255, 255, 0.08);
@@ -16,6 +20,7 @@
         --accent: #7c5cff;
         --accent-2: #2ee59d;
         --danger: #ff5c7a;
+        --ring: 0 0 0 4px rgba(124, 92, 255, 0.18);
       }
 
       * {
@@ -27,6 +32,8 @@
         min-height: 100svh;
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
           Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        font-size: 22.5px; /* +25% */
+        line-height: 1.55;
         color: var(--text);
         background: radial-gradient(
             1200px 700px at 20% 10%,
@@ -46,11 +53,11 @@
           linear-gradient(180deg, #070b14, #0b1220);
         display: grid;
         place-items: center;
-        padding: 28px 16px;
+        padding: 36px 18px;
       }
 
       .wrap {
-        width: min(980px, 100%);
+        width: min(1120px, 100%);
       }
 
       header {
@@ -67,15 +74,23 @@
       }
 
       h1 {
-        font-size: 22px;
+        font-size: 35px; /* +25% */
         letter-spacing: 0.2px;
         margin: 0;
+      }
+
+      .byline {
+        font-size: 0.72em;
+        font-weight: 650;
+        color: rgba(255, 255, 255, 0.68);
+        margin-left: 8px;
+        white-space: nowrap;
       }
 
       .sub {
         margin: 0;
         color: var(--muted);
-        font-size: 13px;
+        font-size: 15px;
         line-height: 1.45;
       }
 
@@ -85,6 +100,8 @@
         box-shadow: var(--shadow);
         border-radius: 18px;
         overflow: hidden;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
       }
 
       .content {
@@ -100,7 +117,7 @@
       }
 
       .pane {
-        padding: 18px;
+        padding: 22px;
       }
 
       .pane + .pane {
@@ -115,11 +132,25 @@
       }
 
       .sectionTitle {
-        font-size: 12px;
+        font-size: 13px;
         letter-spacing: 0.12em;
         color: rgba(255, 255, 255, 0.58);
         text-transform: uppercase;
         margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .sectionTitle::after {
+        content: "";
+        height: 1px;
+        flex: 1 1 auto;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.16),
+          rgba(255, 255, 255, 0)
+        );
       }
 
       .grid {
@@ -133,7 +164,7 @@
       }
 
       label {
-        font-size: 13px;
+        font-size: 15px;
         color: rgba(255, 255, 255, 0.78);
       }
 
@@ -147,13 +178,83 @@
         color: var(--text);
         padding: 11px 12px;
         outline: none;
-        font-size: 14px;
+        font-size: 20px; /* +25% */
+        transition: border-color 0.2s ease, box-shadow 0.2s ease,
+          background 0.2s ease, transform 0.06s ease;
       }
 
       select:focus,
       input:focus {
         border-color: rgba(124, 92, 255, 0.6);
-        box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.18);
+        box-shadow: var(--ring);
+      }
+
+      select:hover,
+      input:hover {
+        border-color: rgba(255, 255, 255, 0.28);
+        background: rgba(9, 14, 26, 0.72);
+      }
+
+      .combo {
+        position: relative;
+      }
+
+      .comboInput {
+        cursor: pointer;
+      }
+
+      .suggestions {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(7, 10, 20, 0.86);
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+        max-height: 320px; /* 下拉联想框更“长” */
+        overflow: auto;
+        padding: 6px;
+        display: none;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      .suggestions.show {
+        display: block;
+      }
+
+      .suggestionItem {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .suggestionItem:hover {
+        background: rgba(124, 92, 255, 0.16);
+      }
+
+      .suggestionIcao {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        letter-spacing: 0.06em;
+        color: rgba(255, 255, 255, 0.92);
+        flex: 0 0 auto;
+      }
+
+      .suggestionName {
+        color: rgba(255, 255, 255, 0.70);
+        flex: 1 1 auto;
+        text-align: right;
+      }
+
+      .suggestionName.left {
+        text-align: left;
       }
 
       .btnRow {
@@ -176,6 +277,12 @@
           border-color 0.2s ease;
       }
 
+      button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.28);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+
       button:active {
         transform: translateY(1px);
       }
@@ -187,6 +294,10 @@
         font-weight: 650;
       }
 
+      .primary:hover {
+        box-shadow: 0 18px 54px rgba(124, 92, 255, 0.22);
+      }
+
       .secondary {
         background: rgba(255, 255, 255, 0.06);
       }
@@ -194,26 +305,31 @@
       .resultCard {
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.16);
-        background: rgba(7, 10, 20, 0.55);
-        padding: 14px;
+        background: linear-gradient(
+          180deg,
+          rgba(7, 10, 20, 0.62),
+          rgba(7, 10, 20, 0.46)
+        );
+        padding: 18px;
         display: grid;
-        gap: 10px;
+        gap: 12px;
       }
 
       .big {
-        font-size: 34px;
+        font-size: 52.5px; /* +25% */
         letter-spacing: 0.08em;
         font-weight: 800;
         margin: 0;
         line-height: 1.1;
         text-align: center;
+        text-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
       }
 
       .meta {
         display: grid;
         gap: 6px;
         color: var(--muted);
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.4;
       }
 
@@ -225,8 +341,8 @@
       }
 
       .pill {
-        font-size: 12px;
-        padding: 6px 10px;
+        font-size: 14px;
+        padding: 7px 12px;
         border-radius: 999px;
         border: 1px solid rgba(255, 255, 255, 0.14);
         background: rgba(255, 255, 255, 0.06);
@@ -235,13 +351,13 @@
 
       .hint {
         margin: 10px 0 0 0;
-        font-size: 12px;
+        font-size: 13px;
         color: rgba(255, 255, 255, 0.62);
       }
 
       .warn {
         margin: 10px 0 0 0;
-        font-size: 12px;
+        font-size: 13px;
         color: rgba(255, 255, 255, 0.72);
         border-left: 3px solid rgba(255,  92, 122, 0.85);
         padding-left: 10px;
@@ -250,7 +366,7 @@
       .kbd {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
           "Liberation Mono", "Courier New", monospace;
-        font-size: 12px;
+        font-size: 13px;
         border: 1px solid rgba(255, 255, 255, 0.14);
         background: rgba(255, 255, 255, 0.06);
         padding: 1px 6px;
@@ -261,7 +377,7 @@
       footer {
         margin-top: 14px;
         color: rgba(255, 255, 255, 0.52);
-        font-size: 12px;
+        font-size: 13px;
         line-height: 1.45;
       }
 
@@ -279,9 +395,10 @@
     <div class="wrap">
       <header>
         <div class="title">
-          <h1>模拟飞行呼号（ICAO）生成器</h1>
+          <h1>
+            模拟飞行呼号生成器<span class="byline">BY:ZIYU YANG</span>
+          </h1>
           <p class="sub">
-            国内航司执飞<strong>国内航线</strong>为 4 位数字；执飞<strong>国外航线</strong>为 3 位数字。
           </p>
         </div>
       </header>
@@ -293,24 +410,38 @@
             <div class="grid">
               <div class="row">
                 <label for="routeType">航线类型</label>
-                <select id="routeType">
+                <select id="routeType" style="display: none">
                   <option value="domestic">国内航线（4位航班号）</option>
                   <option value="international">国外航线（3位航班号）</option>
                 </select>
+                <div class="combo">
+                  <input
+                    id="routeTypeInput"
+                    class="comboInput"
+                    readonly
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    placeholder="请选择航线类型"
+                  />
+                  <div id="routeTypeSuggestions" class="suggestions" role="listbox"></div>
+                </div>
               </div>
 
               <div class="row">
-                <label for="airline">选择国内航司（ICAO）</label>
-                <select id="airline"></select>
-                <p class="hint">如需增减航司列表，可在页面脚本里的 <span class="kbd">AIRLINES</span> 里改。</p>
-              </div>
-
-              <div class="row">
-                <label for="numberPolicy">航班号范围</label>
-                <select id="numberPolicy">
-                  <option value="noLeadingZero" selected>不允许前导 0（推荐）</option>
-                  <option value="allowLeadingZero">允许前导 0（如 005、0123）</option>
-                </select>
+                <label for="airlineInput">选择航司</label>
+                <div class="combo">
+                  <input
+                    id="airlineInput"
+                    inputmode="latin"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="例如：CCA"
+                  />
+                  <div id="airlineSuggestions" class="suggestions" role="listbox"></div>
+                </div>
+                <p class="hint" style="margin: 6px 0 0 0">
+                  键入会自动提示并匹配（例如输入 C 会提示 CCA/CES/CSN…）
+                </p>
               </div>
 
               <div class="btnRow">
@@ -336,21 +467,12 @@
                 <span class="pill" id="pillDigits">位数：4</span>
               </div>
               <div class="meta" id="meta">
-                <div>规则：国内航线生成 4 位；国外航线生成 3 位。</div>
-                <div>格式：<span class="kbd">AAA</span><span class="kbd">1234</span></div>
               </div>
-              <p class="warn">
-                说明：这里的“ICAO 呼号”按你需求仅拼接<strong>航司 ICAO 三字码 + 航班号</strong>，
-                不包含机型、航路等信息。
-              </p>
             </div>
           </section>
         </div>
       </div>
 
-      <footer>
-        本页面可直接双击 <span class="kbd">模拟飞行呼号生成器.html</span> 运行。若浏览器限制剪贴板复制，可用本地服务器打开（例如 VSCode Live Server）。
-      </footer>
     </div>
 
     <script>
@@ -372,8 +494,10 @@
       ];
 
       const routeTypeEl = document.getElementById("routeType");
-      const airlineEl = document.getElementById("airline");
-      const numberPolicyEl = document.getElementById("numberPolicy");
+      const routeTypeInputEl = document.getElementById("routeTypeInput");
+      const routeTypeSuggestionsEl = document.getElementById("routeTypeSuggestions");
+      const airlineInputEl = document.getElementById("airlineInput");
+      const airlineSuggestionsEl = document.getElementById("airlineSuggestions");
       const generateBtn = document.getElementById("generateBtn");
       const copyBtn = document.getElementById("copyBtn");
       const callsignEl = document.getElementById("callsign");
@@ -387,31 +511,114 @@
         return String(num).padStart(digits, "0");
       }
 
+      const ROUTE_TYPES = [
+        { value: "domestic", label: "国内航线（4位航班号）" },
+        { value: "international", label: "国外航线（3位航班号）" }
+      ];
+
       function randomIntInclusive(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
       }
 
-      function generateFlightNumber({ digits, allowLeadingZero }) {
-        if (allowLeadingZero) {
-          const max = Math.pow(10, digits) - 1;
-          const n = randomIntInclusive(0, max);
-          return padLeft(n, digits);
-        }
-
+      function generateFlightNumber({ digits }) {
         // 不允许前导 0：最高位至少 1
         const min = Math.pow(10, digits - 1);
         const max = Math.pow(10, digits) - 1;
         return String(randomIntInclusive(min, max));
       }
 
+      function normalizeIcaoInput(value) {
+        return String(value || "")
+          .toUpperCase()
+          .replace(/[^A-Z]/g, "")
+          .slice(0, 3);
+      }
+
       function buildAirlineOptions() {
-        airlineEl.innerHTML = "";
-        for (const a of AIRLINES) {
-          const opt = document.createElement("option");
-          opt.value = a.icao;
-          opt.textContent = `${a.icao} — ${a.name}`;
-          airlineEl.appendChild(opt);
+        // 自定义联想列表：无需预先插入 option
+      }
+
+      function syncInput() {
+        const v = normalizeIcaoInput(airlineInputEl.value);
+        if (!airlineInputEl.value) return;
+        if (airlineInputEl.value !== v) airlineInputEl.value = v;
+      }
+
+      function filterAirlines(query) {
+        if (!query) return AIRLINES;
+        return AIRLINES.filter(
+          (a) =>
+            a.icao.startsWith(query) ||
+            a.name.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+
+      function setSuggestionsVisible(visible) {
+        airlineSuggestionsEl.classList.toggle("show", visible);
+      }
+
+      function setRouteTypeSuggestionsVisible(visible) {
+        routeTypeSuggestionsEl.classList.toggle("show", visible);
+        routeTypeInputEl.setAttribute("aria-expanded", visible ? "true" : "false");
+      }
+
+      function renderSuggestions() {
+        const q = normalizeIcaoInput(airlineInputEl.value);
+        const list = filterAirlines(q);
+        airlineSuggestionsEl.innerHTML = "";
+
+        for (const a of list) {
+          const item = document.createElement("div");
+          item.className = "suggestionItem";
+          item.setAttribute("role", "option");
+          item.dataset.icao = a.icao;
+          item.innerHTML = `<span class="suggestionIcao">${a.icao}</span><span class="suggestionName">${a.name}</span>`;
+          item.addEventListener("mousedown", (e) => {
+            // mousedown 先于 blur：避免点选时列表先消失
+            e.preventDefault();
+            airlineInputEl.value = a.icao;
+            setSuggestionsVisible(false);
+          });
+          airlineSuggestionsEl.appendChild(item);
         }
+
+        setSuggestionsVisible(list.length > 0);
+      }
+
+      function setRouteTypeDisplayFromSelect() {
+        const selected = ROUTE_TYPES.find((r) => r.value === routeTypeEl.value);
+        routeTypeInputEl.value = selected?.label || "";
+      }
+
+      function renderRouteTypeSuggestions() {
+        routeTypeSuggestionsEl.innerHTML = "";
+
+        for (const r of ROUTE_TYPES) {
+          const item = document.createElement("div");
+          item.className = "suggestionItem";
+          item.setAttribute("role", "option");
+          item.dataset.value = r.value;
+          item.innerHTML = `<span class="suggestionName left">${r.label}</span>`;
+          item.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            routeTypeEl.value = r.value;
+            setRouteTypeDisplayFromSelect();
+            setRouteTypeSuggestionsVisible(false);
+            setPills({
+              routeType: routeTypeEl.value,
+              airlineIcao: getAirlineIcao(),
+              digits: routeTypeEl.value === "domestic" ? 4 : 3
+            });
+          });
+          routeTypeSuggestionsEl.appendChild(item);
+        }
+
+        setRouteTypeSuggestionsVisible(true);
+      }
+
+      function getAirlineIcao() {
+        const v = normalizeIcaoInput(airlineInputEl.value);
+        return /^[A-Z]{3}$/.test(v) ? v : "";
       }
 
       function setPills({ routeType, airlineIcao, digits }) {
@@ -423,11 +630,15 @@
 
       function generateCallsign() {
         const routeType = routeTypeEl.value;
-        const airlineIcao = airlineEl.value;
+        const airlineIcao = getAirlineIcao();
         const digits = routeType === "domestic" ? 4 : 3;
-        const allowLeadingZero = numberPolicyEl.value === "allowLeadingZero";
 
-        const flightNo = generateFlightNumber({ digits, allowLeadingZero });
+        if (!airlineIcao) {
+          copyStatusEl.textContent = "请先选择航司或输入 3 位 ICAO 代码。";
+          return;
+        }
+
+        const flightNo = generateFlightNumber({ digits });
         const callsign = `${airlineIcao}${flightNo}`;
 
         callsignEl.textContent = callsign;
@@ -458,14 +669,48 @@
       }
 
       buildAirlineOptions();
-      setPills({ routeType: routeTypeEl.value, airlineIcao: airlineEl.value, digits: 4 });
+      // 初始不预选航司：保持为空
+      airlineInputEl.value = "";
+      setRouteTypeDisplayFromSelect();
+      setPills({
+        routeType: routeTypeEl.value,
+        airlineIcao: getAirlineIcao(),
+        digits: routeTypeEl.value === "domestic" ? 4 : 3
+      });
 
       generateBtn.addEventListener("click", generateCallsign);
       copyBtn.addEventListener("click", copyCallsign);
+      routeTypeInputEl.addEventListener("focus", () => {
+        renderRouteTypeSuggestions();
+      });
+      routeTypeInputEl.addEventListener("click", () => {
+        renderRouteTypeSuggestions();
+      });
+      routeTypeInputEl.addEventListener("blur", () => {
+        window.setTimeout(() => setRouteTypeSuggestionsVisible(false), 120);
+      });
+      airlineInputEl.addEventListener("input", () => {
+        syncInput();
+        renderSuggestions();
+      });
+      airlineInputEl.addEventListener("focus", () => {
+        renderSuggestions();
+      });
+      airlineInputEl.addEventListener("blur", () => {
+        // 给点击条目一点时间
+        window.setTimeout(() => setSuggestionsVisible(false), 120);
+      });
 
       // Enter 触发生成
       window.addEventListener("keydown", (e) => {
         if (e.key === "Enter") generateCallsign();
+      });
+
+      // 允许 ESC 关闭下拉
+      window.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        setRouteTypeSuggestionsVisible(false);
+        setSuggestionsVisible(false);
       });
     </script>
   </body>
