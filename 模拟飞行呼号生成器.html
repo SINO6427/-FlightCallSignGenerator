@@ -207,6 +207,11 @@
         margin: 0;
         line-height: 1.1;
         text-align: center;
+        cursor: pointer;
+      }
+
+      .big:hover {
+        color: rgba(124, 92, 255, 0.95);
       }
 
       .meta {
@@ -243,7 +248,7 @@
         margin: 10px 0 0 0;
         font-size: 12px;
         color: rgba(255, 255, 255, 0.72);
-        border-left: 3px solid rgba(255,  92, 122, 0.85);
+        border-left: 3px solid rgba(255, 92, 122, 0.85);
         padding-left: 10px;
       }
 
@@ -256,6 +261,84 @@
         padding: 1px 6px;
         border-radius: 8px;
         color: rgba(255, 255, 255, 0.86);
+      }
+
+      /* ===== 历史记录 ===== */
+      .historyBlock {
+        margin-top: 14px;
+      }
+
+      .historyHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 10px 0;
+      }
+
+      .historyHead .sectionTitle {
+        margin: 0;
+      }
+
+      .linkBtn {
+        background: none;
+        border: none;
+        padding: 2px 4px;
+        width: auto;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+      }
+
+      .linkBtn:hover {
+        color: var(--text);
+        text-decoration: underline;
+      }
+
+      .historyList {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 6px;
+        max-height: 210px;
+        overflow-y: auto;
+      }
+
+      .historyItem {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 13px;
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+      }
+
+      .historyItem:hover {
+        border-color: rgba(124, 92, 255, 0.55);
+      }
+
+      .historyItem .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        letter-spacing: 0.06em;
+        font-weight: 650;
+      }
+
+      .historyItem .note {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .historyEmpty {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 0;
+        padding: 4px 2px;
       }
 
       footer {
@@ -300,9 +383,9 @@
               </div>
 
               <div class="row">
-                <label for="airline">选择国内航司（ICAO）</label>
+                <label for="airline" id="airlineLabel">选择国内航司（ICAO）</label>
                 <select id="airline"></select>
-                <p class="hint">如需增减航司列表，可在页面脚本里的 <span class="kbd">AIRLINES</span> 里改。</p>
+                <p class="hint">如需增减航司列表，可在页面脚本顶部的 <span class="kbd">DOMESTIC_AIRLINES</span> / <span class="kbd">FOREIGN_AIRLINES</span> 里改。</p>
               </div>
 
               <div class="row">
@@ -329,14 +412,15 @@
           <section class="pane">
             <p class="sectionTitle">生成结果</p>
             <div class="resultCard">
-              <p id="callsign" class="big">———</p>
+              <p id="callsign" class="big" title="点击复制">———</p>
               <div class="pillRow">
                 <span class="pill" id="pillRoute">航线：国内</span>
                 <span class="pill" id="pillAirline">航司：—</span>
                 <span class="pill" id="pillDigits">位数：4</span>
               </div>
-              <div class="meta" id="meta">
-                <div>规则：国内航线生成 4 位；国外航线生成 3 位。</div>
+              <div class="meta">
+                <div id="metaRoute">航线：国内航线（4 位航班号）</div>
+                <div id="metaAirline">航司：—</div>
                 <div>格式：<span class="kbd">AAA</span><span class="kbd">1234</span></div>
               </div>
               <p class="warn">
@@ -344,129 +428,434 @@
                 不包含机型、航路等信息。
               </p>
             </div>
+
+            <div class="historyBlock">
+              <div class="historyHead">
+                <p class="sectionTitle">历史记录</p>
+                <button id="clearHistoryBtn" class="linkBtn" type="button">清空</button>
+              </div>
+              <ul id="historyList" class="historyList"></ul>
+            </div>
           </section>
         </div>
       </div>
 
       <footer>
-        本页面可直接双击 <span class="kbd">模拟飞行呼号生成器.html</span> 运行。若浏览器限制剪贴板复制，可用本地服务器打开（例如 VSCode Live Server）。
+        本页面可直接双击 <span class="kbd">模拟飞行呼号生成器.html</span> 运行。
+        快捷键：<span class="kbd">Enter</span> 生成，点击结果或历史记录即可复制。
+        若浏览器限制剪贴板复制，可用本地服务器打开（例如 VSCode Live Server）。
       </footer>
     </div>
 
     <script>
-      /**
-       * 国内航司 ICAO 三字码（常见航司示例）
-       * 你可以按需要增删/修改。
-       */
-      const AIRLINES = [
-        { name: "中国国际航空 Air China", icao: "CCA" },
-        { name: "中国东方航空 China Eastern", icao: "CES" },
-        { name: "中国南方航空 China Southern", icao: "CSN" },
-        { name: "海南航空 Hainan Airlines", icao: "CHH" },
-        { name: "深圳航空 Shenzhen Airlines", icao: "CSZ" },
-        { name: "厦门航空 XiamenAir", icao: "CXA" },
-        { name: "四川航空 Sichuan Airlines", icao: "CSC" },
-        { name: "山东航空 Shandong Airlines", icao: "CDG" },
-        { name: "春秋航空 Spring Airlines", icao: "CQH" },
-        { name: "吉祥航空 Juneyao Air", icao: "DKH" }
-      ];
+      "use strict";
 
-      const routeTypeEl = document.getElementById("routeType");
-      const airlineEl = document.getElementById("airline");
-      const numberPolicyEl = document.getElementById("numberPolicy");
-      const generateBtn = document.getElementById("generateBtn");
-      const copyBtn = document.getElementById("copyBtn");
-      const callsignEl = document.getElementById("callsign");
-      const copyStatusEl = document.getElementById("copyStatus");
+      (() => {
+        /* =====================================================================
+         * 一、数据配置
+         * 增删航司请改下面两个数组；格式：{ name: "航司名", icao: "ICAO三字码" }
+         * ===================================================================== */
+        const DOMESTIC_AIRLINES = [
+          { name: "中国国际航空 Air China", icao: "CCA" },
+          { name: "中国东方航空 China Eastern", icao: "CES" },
+          { name: "中国南方航空 China Southern", icao: "CSN" },
+          { name: "海南航空 Hainan Airlines", icao: "CHH" },
+          { name: "深圳航空 Shenzhen Airlines", icao: "CSZ" },
+          { name: "厦门航空 XiamenAir", icao: "CXA" },
+          { name: "四川航空 Sichuan Airlines", icao: "CSC" },
+          { name: "山东航空 Shandong Airlines", icao: "CDG" },
+          { name: "上海航空 Shanghai Airlines", icao: "CSH" },
+          { name: "春秋航空 Spring Airlines", icao: "CQH" },
+          { name: "吉祥航空 Juneyao Air", icao: "DKH" },
+          { name: "天津航空 Tianjin Airlines", icao: "GCR" },
+          { name: "首都航空 Beijing Capital Airlines", icao: "CBJ" },
+          { name: "华夏航空 China Express", icao: "HXA" },
+          { name: "河北航空 Hebei Airlines", icao: "HBH" },
+          { name: "成都航空 Chengdu Airlines", icao: "UEA" },
+          { name: "云南祥鹏航空 Lucky Air", icao: "LKE" },
+          { name: "西藏航空 Tibet Airlines", icao: "TBA" },
+          { name: "福州航空 Fuzhou Airlines", icao: "FZA" },
+          { name: "北部湾航空 Beibu Gulf Airlines", icao: "CBG" },
+          { name: "乌鲁木齐航空 Urumqi Air", icao: "CUH" },
+          { name: "青岛航空 Qingdao Airlines", icao: "QDA" },
+          { name: "江西航空 Jiangxi Air", icao: "CJX" },
+          { name: "重庆航空 Chongqing Airlines", icao: "CQN" },
+          { name: "多彩贵州航空 Colorful Guizhou Airlines", icao: "CGZ" },
+          { name: "九元航空 9 Air", icao: "JYH" },
+          { name: "长龙航空 Loong Air", icao: "CDC" },
+          { name: "金鹏航空 Suparna Airlines", icao: "YZR" },
+          { name: "东海航空 Donghai Airlines", icao: "EPA" },
+          { name: "龙江航空 Longjiang Airlines", icao: "SNG" },
+          { name: "瑞丽航空 Ruili Airlines", icao: "RLH" },
+          { name: "奥凯航空 Okay Airways", icao: "OKA" },
+          { name: "幸福航空 Joy Air", icao: "JOY" },
+          { name: "中国联合航空 China United Airlines", icao: "CUA" },
+          { name: "湖南航空 Hunan Airlines", icao: "OTC" },
+          { name: "大连航空 Dalian Airlines", icao: "CCD" },
+          { name: "中国邮政航空 China Postal Airlines", icao: "CYZ" },
+          { name: "顺丰航空 SF Airlines", icao: "CSS" },
+          { name: "圆通航空 YTO Cargo Airlines", icao: "HYT" }
+        ];
 
-      const pillRouteEl = document.getElementById("pillRoute");
-      const pillAirlineEl = document.getElementById("pillAirline");
-      const pillDigitsEl = document.getElementById("pillDigits");
+        const FOREIGN_AIRLINES = [
+          { name: "国泰航空 Cathay Pacific", icao: "CPA" },
+          { name: "香港航空 Hong Kong Airlines", icao: "CRK" },
+          { name: "澳门航空 Air Macau", icao: "AMU" },
+          { name: "中华航空 China Airlines", icao: "CAL" },
+          { name: "长荣航空 EVA Air", icao: "EVA" },
+          { name: "全日空 All Nippon Airways", icao: "ANA" },
+          { name: "日本航空 Japan Airlines", icao: "JAL" },
+          { name: "大韩航空 Korean Air", icao: "KAL" },
+          { name: "韩亚航空 Asiana Airlines", icao: "AAR" },
+          { name: "新加坡航空 Singapore Airlines", icao: "SIA" },
+          { name: "泰国国际航空 Thai Airways", icao: "THA" },
+          { name: "马来西亚航空 Malaysia Airlines", icao: "MAS" },
+          { name: "越南航空 Vietnam Airlines", icao: "HVN" },
+          { name: "印尼鹰航 Garuda Indonesia", icao: "GIA" },
+          { name: "菲律宾航空 Philippine Airlines", icao: "PAL" },
+          { name: "印度航空 Air India", icao: "AIC" },
+          { name: "斯里兰卡航空 SriLankan Airlines", icao: "ALK" },
+          { name: "卡塔尔航空 Qatar Airways", icao: "QTR" },
+          { name: "阿联酋航空 Emirates", icao: "UAE" },
+          { name: "阿提哈德航空 Etihad Airways", icao: "ETD" },
+          { name: "阿曼航空 Oman Air", icao: "OMA" },
+          { name: "沙特航空 Saudia", icao: "SVA" },
+          { name: "土耳其航空 Turkish Airlines", icao: "THY" },
+          { name: "汉莎航空 Lufthansa", icao: "DLH" },
+          { name: "法国航空 Air France", icao: "AFR" },
+          { name: "英国航空 British Airways", icao: "BAW" },
+          { name: "荷兰皇家航空 KLM", icao: "KLM" },
+          { name: "瑞士国际航空 Swiss", icao: "SWR" },
+          { name: "奥地利航空 Austrian Airlines", icao: "AUA" },
+          { name: "芬兰航空 Finnair", icao: "FIN" },
+          { name: "北欧航空 SAS", icao: "SAS" },
+          { name: "西班牙航空 Iberia", icao: "IBE" },
+          { name: "意大利航空 ITA Airways", icao: "ITY" },
+          { name: "波兰航空 LOT Polish Airlines", icao: "LOT" },
+          { name: "俄罗斯航空 Aeroflot", icao: "AFL" },
+          { name: "埃及航空 EgyptAir", icao: "MSR" },
+          { name: "埃塞俄比亚航空 Ethiopian Airlines", icao: "ETH" },
+          { name: "肯尼亚航空 Kenya Airways", icao: "KQA" },
+          { name: "澳洲航空 Qantas", icao: "QFA" },
+          { name: "新西兰航空 Air New Zealand", icao: "ANZ" },
+          { name: "加拿大航空 Air Canada", icao: "ACA" },
+          { name: "达美航空 Delta Air Lines", icao: "DAL" },
+          { name: "美国联合航空 United Airlines", icao: "UAL" },
+          { name: "美国航空 American Airlines", icao: "AAL" }
+        ];
 
-      function padLeft(num, digits) {
-        return String(num).padStart(digits, "0");
-      }
+        // 所有航司合并列表，供查询
+        const ALL_AIRLINES = [...DOMESTIC_AIRLINES, ...FOREIGN_AIRLINES];
 
-      function randomIntInclusive(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-      }
+        // 航线类型 → 展示名 / 航班号位数
+        const ROUTE_META = {
+          domestic: { label: "国内航线", digits: 4 },
+          international: { label: "国外航线", digits: 3 }
+        };
 
-      function generateFlightNumber({ digits, allowLeadingZero }) {
-        if (allowLeadingZero) {
+        const HISTORY_MAX = 20;
+        const SETTINGS_KEY = "flight-callsign.settings.v1";
+        const HISTORY_KEY = "flight-callsign.history.v1";
+
+        /* =====================================================================
+         * 二、运行时状态
+         * ===================================================================== */
+        const state = {
+          routeType: "domestic",
+          airlineIcao: "CCA",
+          allowLeadingZero: false,
+          last: null,
+          history: []
+        };
+
+        /* =====================================================================
+         * 三、DOM 引用
+         * ===================================================================== */
+        const $ = (id) => document.getElementById(id);
+
+        const routeTypeEl = $("routeType");
+        const airlineEl = $("airline");
+        const airlineLabelEl = $("airlineLabel");
+        const numberPolicyEl = $("numberPolicy");
+        const generateBtn = $("generateBtn");
+        const copyBtn = $("copyBtn");
+        const copyStatusEl = $("copyStatus");
+        const callsignEl = $("callsign");
+        const pillRouteEl = $("pillRoute");
+        const pillAirlineEl = $("pillAirline");
+        const pillDigitsEl = $("pillDigits");
+        const metaRouteEl = $("metaRoute");
+        const metaAirlineEl = $("metaAirline");
+        const historyListEl = $("historyList");
+        const clearHistoryBtn = $("clearHistoryBtn");
+
+        /* =====================================================================
+         * 四、工具函数
+         * ===================================================================== */
+
+        /** 闭区间随机整数 [min, max] */
+        function randomIntInclusive(min, max) {
+          return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        /** 按 digits 位左补零 */
+        function padLeft(num, digits) {
+          return String(num).padStart(digits, "0");
+        }
+
+        /** 按 ICAO 三字码查找航司，找不到返回 null */
+        function findAirline(icao) {
+          return ALL_AIRLINES.find((a) => a.icao === icao) || null;
+        }
+
+        /** 生成航班号：allowedLeadingZero=true 允许前导 0 */
+        function generateFlightNumber(digits, allowLeadingZero) {
+          if (allowLeadingZero) {
+            return padLeft(randomIntInclusive(0, Math.pow(10, digits) - 1), digits);
+          }
+          // 不允许前导 0：最高位至少为 1
+          const min = Math.pow(10, digits - 1);
           const max = Math.pow(10, digits) - 1;
-          const n = randomIntInclusive(0, max);
-          return padLeft(n, digits);
+          return String(randomIntInclusive(min, max));
         }
 
-        // 不允许前导 0：最高位至少 1
-        const min = Math.pow(10, digits - 1);
-        const max = Math.pow(10, digits) - 1;
-        return String(randomIntInclusive(min, max));
-      }
-
-      function buildAirlineOptions() {
-        airlineEl.innerHTML = "";
-        for (const a of AIRLINES) {
-          const opt = document.createElement("option");
-          opt.value = a.icao;
-          opt.textContent = `${a.icao} — ${a.name}`;
-          airlineEl.appendChild(opt);
-        }
-      }
-
-      function setPills({ routeType, airlineIcao, digits }) {
-        pillRouteEl.textContent =
-          routeType === "domestic" ? "航线：国内" : "航线：国外";
-        pillAirlineEl.textContent = `航司：${airlineIcao || "—"}`;
-        pillDigitsEl.textContent = `位数：${digits}`;
-      }
-
-      function generateCallsign() {
-        const routeType = routeTypeEl.value;
-        const airlineIcao = airlineEl.value;
-        const digits = routeType === "domestic" ? 4 : 3;
-        const allowLeadingZero = numberPolicyEl.value === "allowLeadingZero";
-
-        const flightNo = generateFlightNumber({ digits, allowLeadingZero });
-        const callsign = `${airlineIcao}${flightNo}`;
-
-        callsignEl.textContent = callsign;
-        setPills({ routeType, airlineIcao, digits });
-        copyStatusEl.textContent = "";
-      }
-
-      async function copyCallsign() {
-        const text = callsignEl.textContent.trim();
-        if (!text || text === "———") {
-          copyStatusEl.textContent = "请先生成呼号。";
-          return;
+        /* =====================================================================
+         * 五、持久化（localStorage，失败时静默降级）
+         * ===================================================================== */
+        function loadJSON(key, fallback) {
+          try {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : fallback;
+          } catch {
+            return fallback;
+          }
         }
 
-        try {
-          await navigator.clipboard.writeText(text);
-          copyStatusEl.textContent = `已复制：${text}`;
-        } catch {
-          // 兼容旧浏览器/非安全上下文：选中文本提示用户手动复制
-          const range = document.createRange();
-          range.selectNodeContents(callsignEl);
-          const sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-          copyStatusEl.textContent =
-            "浏览器限制自动复制：已选中结果，请按 Ctrl+C 复制。";
+        function saveJSON(key, value) {
+          try {
+            localStorage.setItem(key, JSON.stringify(value));
+          } catch {
+            /* 隐私模式或禁用存储时忽略 */
+          }
         }
-      }
 
-      buildAirlineOptions();
-      setPills({ routeType: routeTypeEl.value, airlineIcao: airlineEl.value, digits: 4 });
+        function saveSettings() {
+          saveJSON(SETTINGS_KEY, {
+            routeType: state.routeType,
+            airlineIcao: state.airlineIcao,
+            allowLeadingZero: state.allowLeadingZero
+          });
+        }
 
-      generateBtn.addEventListener("click", generateCallsign);
-      copyBtn.addEventListener("click", copyCallsign);
+        function persistHistory() {
+          saveJSON(HISTORY_KEY, state.history);
+        }
 
-      // Enter 触发生成
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") generateCallsign();
-      });
+        /* =====================================================================
+         * 六、渲染
+         * ===================================================================== */
+
+        /** 根据航线类型重建航司下拉列表（国际航线额外提供国外航司） */
+        function renderAirlineSelect() {
+          const isDomestic = state.routeType === "domestic";
+          const groups = isDomestic
+            ? [{ label: "国内航司", list: DOMESTIC_AIRLINES }]
+            : [
+                { label: "国内航司", list: DOMESTIC_AIRLINES },
+                { label: "国外航司", list: FOREIGN_AIRLINES }
+              ];
+
+          airlineEl.innerHTML = "";
+          for (const g of groups) {
+            const optgroup = document.createElement("optgroup");
+            optgroup.label = g.label;
+            for (const a of g.list) {
+              const opt = document.createElement("option");
+              opt.value = a.icao;
+              opt.textContent = `${a.icao} — ${a.name}`;
+              optgroup.appendChild(opt);
+            }
+            airlineEl.appendChild(optgroup);
+          }
+
+          // 切换航线后，若当前航司已不在可用列表，则回退到列表第一项
+          const available = isDomestic ? DOMESTIC_AIRLINES : ALL_AIRLINES;
+          if (!available.some((a) => a.icao === state.airlineIcao)) {
+            state.airlineIcao = available[0].icao;
+          }
+          airlineEl.value = state.airlineIcao;
+        }
+
+        /** 更新“航司”标签文案 */
+        function updateAirlineLabel() {
+          airlineLabelEl.textContent =
+            state.routeType === "domestic" ? "选择国内航司（ICAO）" : "选择航司（ICAO）";
+        }
+
+        /** 更新结果区的胶囊与明细 */
+        function renderResult(callsign, route, airline) {
+          callsignEl.textContent = callsign;
+          pillRouteEl.textContent = `航线：${route.label}`;
+          pillAirlineEl.textContent = `航司：${airline.icao}`;
+          pillDigitsEl.textContent = `位数：${route.digits}`;
+          metaRouteEl.textContent = `航线：${route.label}（${route.digits} 位航班号）`;
+          metaAirlineEl.textContent = `航司：${airline.name}（${airline.icao}）`;
+        }
+
+        /** 渲染历史记录列表 */
+        function renderHistory() {
+          historyListEl.innerHTML = "";
+          if (state.history.length === 0) {
+            const li = document.createElement("li");
+            li.className = "historyEmpty";
+            li.textContent = "暂无记录，点击「生成呼号」开始。";
+            historyListEl.appendChild(li);
+            return;
+          }
+          for (const h of state.history) {
+            const li = document.createElement("li");
+            li.className = "historyItem";
+            li.title = "点击复制";
+            const mono = document.createElement("span");
+            mono.className = "mono";
+            mono.textContent = h.callsign;
+            const note = document.createElement("span");
+            note.className = "note";
+            note.textContent = `${h.routeLabel} · ${h.airlineName}`;
+            li.append(mono, note);
+            li.addEventListener("click", () => copyText(h.callsign));
+            historyListEl.appendChild(li);
+          }
+        }
+
+        /* =====================================================================
+         * 七、生成与复制
+         * ===================================================================== */
+
+        /** 生成呼号，避免与上次结果连续重复 */
+        function generateCallsign() {
+          const route = ROUTE_META[state.routeType];
+          const airline = findAirline(state.airlineIcao) || {
+            icao: "???",
+            name: "未知航司"
+          };
+
+          let callsign = "";
+          let guard = 0;
+          do {
+            const flightNo = generateFlightNumber(route.digits, state.allowLeadingZero);
+            callsign = airline.icao + flightNo;
+          } while (callsign === state.last && guard++ < 20);
+
+          state.last = callsign;
+          renderResult(callsign, route, airline);
+          addHistory(callsign, route, airline);
+          copyStatusEl.textContent = "";
+          return callsign;
+        }
+
+        /** 写入历史（去重置顶，最多保留 HISTORY_MAX 条） */
+        function addHistory(callsign, route, airline) {
+          state.history = state.history.filter((h) => h.callsign !== callsign);
+          state.history.unshift({
+            callsign,
+            routeLabel: route.label,
+            airlineName: airline.name
+          });
+          if (state.history.length > HISTORY_MAX) {
+            state.history.length = HISTORY_MAX;
+          }
+          persistHistory();
+          renderHistory();
+        }
+
+        /** 复制文本；navigator.clipboard 不可用时退回“选中提示手动复制” */
+        async function copyText(text) {
+          try {
+            await navigator.clipboard.writeText(text);
+            copyStatusEl.textContent = `已复制：${text}`;
+          } catch {
+            const range = document.createRange();
+            range.selectNodeContents(callsignEl);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            copyStatusEl.textContent =
+              "浏览器限制自动复制：已选中结果，请按 Ctrl+C 复制。";
+          }
+        }
+
+        function copyCallsign() {
+          const text = callsignEl.textContent.trim();
+          if (!text || text === "———") {
+            copyStatusEl.textContent = "请先生成呼号。";
+            return;
+          }
+          copyText(text);
+        }
+
+        /* =====================================================================
+         * 八、事件绑定
+         * ===================================================================== */
+        generateBtn.addEventListener("click", generateCallsign);
+        copyBtn.addEventListener("click", copyCallsign);
+        callsignEl.addEventListener("click", copyCallsign);
+        clearHistoryBtn.addEventListener("click", () => {
+          state.history = [];
+          persistHistory();
+          renderHistory();
+          copyStatusEl.textContent = "历史记录已清空。";
+        });
+
+        routeTypeEl.addEventListener("change", () => {
+          state.routeType = routeTypeEl.value;
+          saveSettings();
+          updateAirlineLabel();
+          renderAirlineSelect();
+        });
+
+        airlineEl.addEventListener("change", () => {
+          state.airlineIcao = airlineEl.value;
+          saveSettings();
+        });
+
+        numberPolicyEl.addEventListener("change", () => {
+          state.allowLeadingZero = numberPolicyEl.value === "allowLeadingZero";
+          saveSettings();
+        });
+
+        // Enter 触发生成（避免在操作下拉框时误触发）
+        window.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          const tag = (e.target && e.target.tagName) || "";
+          if (tag === "SELECT") return;
+          e.preventDefault();
+          generateCallsign();
+        });
+
+        /* =====================================================================
+         * 九、初始化
+         * ===================================================================== */
+        function init() {
+          const settings = loadJSON(SETTINGS_KEY, null);
+          if (settings) {
+            if (ROUTE_META[settings.routeType]) state.routeType = settings.routeType;
+            if (typeof settings.airlineIcao === "string") state.airlineIcao = settings.airlineIcao;
+            if (typeof settings.allowLeadingZero === "boolean") state.allowLeadingZero = settings.allowLeadingZero;
+          }
+          const saved = loadJSON(HISTORY_KEY, []);
+          if (Array.isArray(saved)) state.history = saved;
+
+          routeTypeEl.value = state.routeType;
+          numberPolicyEl.value = state.allowLeadingZero ? "allowLeadingZero" : "noLeadingZero";
+          updateAirlineLabel();
+          renderAirlineSelect();
+          renderHistory();
+          generateCallsign();
+        }
+
+        init();
+      })();
     </script>
   </body>
 </html>
