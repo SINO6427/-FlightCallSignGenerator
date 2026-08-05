@@ -16,7 +16,15 @@
 
 ## 快速开始
 
-1. 下载 `模拟飞行呼号生成器.html`
+### 在线使用（GitHub Pages）
+
+在线版本：**https://SINO6427.github.io/-FlightCallSignGenerator/**
+
+无需下载，直接用浏览器打开即可。
+
+### 本地使用
+
+1. 下载 `index.html`
 2. 双击用浏览器打开即可使用
 3. 若浏览器限制自动复制（`file://` 协议下部分浏览器不允许），可用本地服务器打开，例如 VSCode 的 Live Server 插件
 
@@ -64,8 +72,8 @@ const ROUTE_META = {
 单文件应用，HTML / CSS / JavaScript 全部内联，无需构建工具、无需安装依赖。
 
 ```
-模拟飞行呼号生成器.html   # 全部代码
-README.md                  # 说明文档
+index.html                # 全部代码
+README.md                 # 说明文档
 ```
 
 ## 贡献
