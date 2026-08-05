@@ -18,7 +18,7 @@
 
 ### 在线使用（GitHub Pages）
 
-在线版本：**https://SINO6427.github.io/-FlightCallSignGenerator/**
+在线版本：**https://SINO6427.github.io/FlightCallSignGenerator/**
 
 无需下载，直接用浏览器打开即可。
 
